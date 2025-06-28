@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+# Django
+db.sqlite3
+# Node / React
+jukeguesser-ui/node_modules/
+jukeguesser-ui/build/
+# IDE
+.vscode/
