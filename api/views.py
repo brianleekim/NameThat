@@ -23,12 +23,19 @@ def callback(request):
 
 @api_view(["GET"])
 def playlists(request):
-    """Return simple list of current user’s playlists."""
-    token = request.session.get("token_info", {}).get("access_token")
-    if not token:
+    """Return simple list of current user’s playlists, refreshing token if needed."""
+    token_info = request.session.get("token_info")
+    if not token_info:
         return Response({"error": "not authenticated"}, status=401)
 
-    sp = spotipy.Spotify(auth=token)
+    oauth = get_spotify_oauth()
+
+    # If token expired, refresh it
+    if oauth.is_token_expired(token_info):
+        token_info = oauth.refresh_access_token(token_info["refresh_token"])
+        request.session["token_info"] = token_info
+
+    sp = spotipy.Spotify(auth=token_info["access_token"])
     items = sp.current_user_playlists(limit=50)["items"]
     data = [{"id": p["id"], "name": p["name"]} for p in items]
     return Response(data)
