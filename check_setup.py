@@ -49,12 +49,19 @@ def check_redirect_uri():
     if not (redirect_uri.startswith('http://127.0.0.1:') or 
             redirect_uri.startswith('http://localhost:')):
         print(f"⚠️  Redirect URI should be localhost: {redirect_uri}")
-        print("For local development, use: http://127.0.0.1:8000/api/callback/")
+        print("For local development, use: http://127.0.0.1:8000/api/callback/ or http://127.0.0.1:8080/api/callback/")
     
     if not redirect_uri.endswith('/api/callback/'):
         print(f"⚠️  Redirect URI should end with /api/callback/: {redirect_uri}")
     
-    print(f"✅ Redirect URI: {redirect_uri}")
+    # Extract port from redirect URI
+    if ':8080' in redirect_uri:
+        print("✅ Using port 8080 - remember to run: python manage.py runserver 8080")
+    elif ':8000' in redirect_uri:
+        print("✅ Using port 8000 - remember to run: python manage.py runserver")
+    else:
+        print(f"✅ Redirect URI: {redirect_uri}")
+    
     return True
 
 def check_django_setup():
@@ -113,8 +120,15 @@ def main():
         print("\nNext steps:")
         print("1. Run: python manage.py makemigrations")
         print("2. Run: python manage.py migrate") 
-        print("3. Run: python manage.py runserver")
-        print("4. Visit: http://127.0.0.1:8000/api/login/")
+        
+        # Check which port to use
+        redirect_uri = os.getenv('SPOTIFY_REDIRECT_URI', '')
+        if ':8080' in redirect_uri:
+            print("3. Run: python manage.py runserver 8080")
+            print("4. Visit: http://127.0.0.1:8080/api/login/")
+        else:
+            print("3. Run: python manage.py runserver")
+            print("4. Visit: http://127.0.0.1:8000/api/login/")
     else:
         print("❌ Some checks failed. Please fix the issues above.")
         sys.exit(1)

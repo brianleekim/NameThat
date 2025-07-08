@@ -29,6 +29,10 @@ pip install -r requirements.txt
    ```
    http://127.0.0.1:8000/api/callback/
    ```
+   Or if you want to use a different port (like 8080):
+   ```
+   http://127.0.0.1:8080/api/callback/
+   ```
 4. Copy your `Client ID` and `Client Secret`
 
 ## Step 4: Create Environment File
@@ -38,7 +42,7 @@ Create a `.env` file in the project root with your Spotify credentials:
 ```env
 SPOTIFY_CLIENT_ID=your_client_id_here
 SPOTIFY_CLIENT_SECRET=your_client_secret_here
-SPOTIFY_REDIRECT_URI=http://127.0.0.1:8000/api/callback/
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:8080/api/callback/
 ```
 
 ## Step 5: Run Setup Checker
@@ -59,12 +63,12 @@ python manage.py migrate
 ## Step 7: Start the Server
 
 ```bash
-python manage.py runserver
+python manage.py runserver 8080
 ```
 
 ## Step 8: Test the Application
 
-1. Open your browser and go to: `http://127.0.0.1:8000/api/login/`
+1. Open your browser and go to: `http://127.0.0.1:8080/api/login/`
 2. You should be redirected to Spotify for authorization
 3. After authorizing, you should see your playlists
 
