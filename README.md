@@ -2,7 +2,7 @@
 
 A social music guessing game built with Django and the Spotify Web API. Players can import playlists from Spotify and compete to guess song names from 1-second previews.
 
-## 🎵 Features
+## Features
 
 - **Spotify Integration**: Import and play from your Spotify playlists
 - **Game Sessions**: Track multiple game sessions with scoring
@@ -10,7 +10,7 @@ A social music guessing game built with Django and the Spotify Web API. Players 
 - **Score Tracking**: Monitor performance with detailed statistics
 - **RESTful API**: Clean API endpoints for frontend integration
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 NameThat/
@@ -26,7 +26,7 @@ NameThat/
 └── README.md              # This file
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install Dependencies
 ```bash
@@ -57,7 +57,7 @@ python manage.py runserver
 python test_game_api.py
 ```
 
-## 🎮 Game Flow
+## Game Flow
 
 1. **Authentication**: Visit `/api/login/` to authenticate with Spotify
 2. **Select Playlist**: Use `/api/playlists/` to get your playlists
@@ -68,7 +68,7 @@ python test_game_api.py
    - Submit guess to `/api/submit_guess/`
 5. **View Stats**: Check performance at `/api/game_stats/<session_id>/`
 
-## 📚 API Endpoints
+## API Endpoints
 
 ### Authentication
 - `GET /api/login/` - Start Spotify OAuth flow
@@ -81,7 +81,7 @@ python test_game_api.py
 - `POST /api/submit_guess/` - Submit a song guess
 - `GET /api/game_stats/<session_id>/` - Get game statistics
 
-## 🎯 Example Usage
+## Example Usage
 
 ### Start a Game
 ```python
@@ -117,7 +117,7 @@ result = response.json()
 is_correct = result['is_correct']
 ```
 
-## 🗄️ Database Models
+## Database Models
 
 ### GameSession
 - Tracks overall game progress
@@ -134,7 +134,7 @@ is_correct = result['is_correct']
 - Best scores and averages
 - Game history
 
-## 🔧 Development
+## Development
 
 ### Adding New Features
 1. **Models**: Add to `api/models.py`
@@ -159,7 +159,7 @@ Key endpoints used:
 - `GET /playlists/{playlist_id}/tracks` - Get playlist tracks
 - `GET /tracks/{id}` - Get track information
 
-## 🎨 Frontend Integration
+## Frontend Integration
 
 The API is designed to work with any frontend framework:
 - **React**: Use fetch or axios for API calls
@@ -167,14 +167,14 @@ The API is designed to work with any frontend framework:
 - **Plain JavaScript**: Simple HTTP requests
 - **Mobile Apps**: RESTful API compatible
 
-## 🔒 Security
+## Security
 
 - OAuth 2.0 authentication with Spotify
 - Session-based token management
 - Input validation and sanitization
 - Secure environment variable handling
 
-## 🚀 Deployment
+## Deployment
 
 ### Production Setup
 1. Set `DEBUG = False` in settings
@@ -191,7 +191,7 @@ SPOTIFY_REDIRECT_URI=https://yourdomain.com/api/callback/
 SECRET_KEY=your_django_secret_key
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -199,11 +199,11 @@ SECRET_KEY=your_django_secret_key
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Spotify Web API](https://developer.spotify.com/documentation/web-api/) for music data
 - [Django REST Framework](https://www.django-rest-framework.org/) for API development
