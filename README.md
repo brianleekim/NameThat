@@ -199,10 +199,6 @@ SECRET_KEY=your_django_secret_key
 4. Add tests if applicable
 5. Submit a pull request
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## Acknowledgments
 
 - [Spotify Web API](https://developer.spotify.com/documentation/web-api/) for music data
