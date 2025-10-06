@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NameThat - Audio Player Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .track-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .track-info h3 {
+            margin: 0 0 10px 0;
+        }
+        
+        .track-info p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin: 20px 0;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        
+        .status.success {
+            background: rgba(40, 167, 69, 0.3);
+        }
+        
+        .status.error {
+            background: rgba(220, 53, 69, 0.3);
+        }
+        
+        .status.info {
+            background: rgba(0, 123, 255, 0.3);
+        }
+        
+        .playlist-selector {
+            margin-bottom: 20px;
+        }
+        
+        select {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 200px;
+        }
+        
+        select option {
+            background: #333;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 NameThat Audio Player Demo</h1>
+        
+        <div class="status info">
+            <strong>How it works:</strong> This demo shows how to play 30-second previews from Spotify tracks directly in your browser using the HTML5 audio element.
+        </div>
+        
+        <div class="playlist-selector">
+            <label for="playlist-select">Select a playlist:</label>
+            <select id="playlist-select">
+                <option value="">Loading playlists...</option>
+            </select>
+        </div>
+        
+        <div class="controls">
+            <button onclick="loadPlaylistTracks()">Load Tracks</button>
+            <button onclick="getRandomTrack()">Get Random Track</button>
+            <button onclick="playCurrentTrack()">Play Current Track</button>
+            <button onclick="pauseAudio()">Pause</button>
+            <button onclick="stopAudio()">Stop</button>
+        </div>
+        
+        <div id="track-info" class="track-info" style="display: none;">
+            <h3 id="track-name">Track Name</h3>
+            <p id="track-artist">Artist</p>
+            <p id="track-album">Album</p>
+            <p id="track-duration">Duration: 0:00</p>
+            <p id="track-preview-status">Preview: Not available</p>
+        </div>
+        
+        <audio id="audio-player" class="audio-player" controls>
+            Your browser does not support the audio element.
+        </audio>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div class="status info">
+            <strong>Note:</strong> Only tracks with available preview URLs can be played. Not all tracks have previews available.
+        </div>
+    </div>
+
+    <script>
+        let currentTrack = null;
+        let currentPlaylistId = null;
+        const audioPlayer = document.getElementById('audio-player');
+        
+        // Load playlists on page load
+        window.onload = function() {
+            loadPlaylists();
+        };
+        
+        async function loadPlaylists() {
+            try {
+                const response = await fetch('/api/playlists/');
+                if (!response.ok) {
+                    throw new Error('Not authenticated');
+                }
+                
+                const playlists = await response.json();
+                const select = document.getElementById('playlist-select');
+                select.innerHTML = '<option value="">Select a playlist...</option>';
+                
+                playlists.forEach(playlist => {
+                    const option = document.createElement('option');
+                    option.value = playlist.id;
+                    option.textContent = playlist.name;
+                    select.appendChild(option);
+                });
+                
+                select.addEventListener('change', function() {
+                    currentPlaylistId = this.value;
+                });
+                
+            } catch (error) {
+                showStatus('Please log in first: <a href="/api/login/" style="color: white;">Login with Spotify</a>', 'error');
+            }
+        }
+        
+        async function loadPlaylistTracks() {
+            if (!currentPlaylistId) {
+                showStatus('Please select a playlist first', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('Loading tracks...', 'info');
+                const response = await fetch(`/api/playlist/${currentPlaylistId}/tracks/`);
+                const data = await response.json();
+                
+                showStatus(`Loaded ${data.tracks.length} tracks (${data.tracks_with_preview} with preview)`, 'success');
+                
+                // Get first track with preview
+                const trackWithPreview = data.tracks.find(track => track.has_preview);
+                if (trackWithPreview) {
+                    setCurrentTrack(trackWithPreview);
+                } else {
+                    showStatus('No tracks with preview available in this playlist', 'error');
+                }
+                
+            } catch (error) {
+                showStatus('Failed to load tracks: ' + error.message, 'error');
+            }
+        }
+        
+        async function getRandomTrack() {
+            if (!currentPlaylistId) {
+                showStatus('Please select a playlist first', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('Getting random track...', 'info');
+                const response = await fetch(`/api/playlist/${currentPlaylistId}/random/`);
+                const track = await response.json();
+                
+                setCurrentTrack(track);
+                showStatus('Random track loaded!', 'success');
+                
+            } catch (error) {
+                showStatus('Failed to get random track: ' + error.message, 'error');
+            }
+        }
+        
+        function setCurrentTrack(track) {
+            currentTrack = track;
+            
+            document.getElementById('track-name').textContent = track.name;
+            document.getElementById('track-artist').textContent = track.artists;
+            document.getElementById('track-album').textContent = track.album;
+            document.getElementById('track-duration').textContent = `Duration: ${formatDuration(track.duration_ms)}`;
+            
+            if (track.has_preview) {
+                document.getElementById('track-preview-status').textContent = 'Preview: Available';
+                audioPlayer.src = track.preview_url;
+                audioPlayer.load();
+            } else {
+                document.getElementById('track-preview-status').textContent = 'Preview: Not available';
+                audioPlayer.src = '';
+            }
+            
+            document.getElementById('track-info').style.display = 'block';
+        }
+        
+        function playCurrentTrack() {
+            if (currentTrack && currentTrack.has_preview) {
+                audioPlayer.play();
+            } else {
+                showStatus('No track with preview available', 'error');
+            }
+        }
+        
+        function pauseAudio() {
+            audioPlayer.pause();
+        }
+        
+        function stopAudio() {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+        }
+        
+        function formatDuration(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Audio event listeners
+        audioPlayer.addEventListener('play', () => {
+            showStatus('Playing track...', 'info');
+        });
+        
+        audioPlayer.addEventListener('ended', () => {
+            showStatus('Track ended', 'info');
+        });
+        
+        audioPlayer.addEventListener('error', () => {
+            showStatus('Error playing track', 'error');
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Redirect URI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            background: #ffe6e6;
+            border-left-color: #dc3545;
+        }
+        .success {
+            background: #e6ffe6;
+            border-left-color: #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Redirect URI</h1>
+    
+    <div class="debug-info">
+        <h3>Current Configuration:</h3>
+        <p><strong>Client ID:</strong> <span id="clientId"></span></p>
+        <p><strong>Redirect URI:</strong> <span id="redirectUri"></span></p>
+        <p><strong>Current URL:</strong> <span id="currentUrl"></span></p>
+    </div>
+    
+    <div class="debug-info">
+        <h3>What to check in Spotify Dashboard:</h3>
+        <p>Make sure you have <strong>BOTH</strong> of these redirect URIs in your Spotify app settings:</p>
+        <ul>
+            <li><code>http://127.0.0.1:8000/api/callback/</code> (for Django backend)</li>
+            <li><code>http://127.0.0.1:8080/spotify_web_playback_demo.html</code> (for Web Playback demo)</li>
+        </ul>
+    </div>
+    
+    <div class="debug-info">
+        <h3>Test OAuth URL:</h3>
+        <p>Click the button below to see the exact OAuth URL being generated:</p>
+        <button onclick="showOAuthUrl()">Show OAuth URL</button>
+        <button onclick="testOAuth()">Test OAuth (Go to Spotify)</button>
+        <div id="oauthUrl" style="display: none;"></div>
+    </div>
+    
+    <div class="debug-info">
+        <h3>Troubleshooting Steps:</h3>
+        <ol>
+            <li>Make sure both redirect URIs are added to your Spotify app</li>
+            <li>Clear browser cache (Ctrl+F5 or Cmd+Shift+R)</li>
+            <li>Try incognito/private browsing mode</li>
+            <li>Check that the Client ID matches your Spotify app</li>
+        </ol>
+    </div>
+
+    <script>
+        // Configuration
+        const clientId = '6a66b9a319ad4baba3bf7b2309af5739';
+        const redirectUri = 'http://127.0.0.1:8000/api/callback/';
+        
+        // Scopes needed for Web Playback SDK
+        const scopes = [
+            'streaming',
+            'user-read-email',
+            'user-read-private',
+            'user-library-read',
+            'user-library-modify',
+            'user-read-playback-state',
+            'user-modify-playback-state'
+        ];
+        
+        // Display current configuration
+        document.getElementById('clientId').textContent = clientId;
+        document.getElementById('redirectUri').textContent = redirectUri;
+        document.getElementById('currentUrl').textContent = window.location.href;
+        
+        function showOAuthUrl() {
+            const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes.join(' '))}&show_dialog=true`;
+            
+            const urlDiv = document.getElementById('oauthUrl');
+            urlDiv.innerHTML = `
+                <h4>Generated OAuth URL:</h4>
+                <pre>${authUrl}</pre>
+                <p><strong>Redirect URI being sent:</strong> ${redirectUri}</p>
+                <p><strong>Encoded Redirect URI:</strong> ${encodeURIComponent(redirectUri)}</p>
+            `;
+            urlDiv.style.display = 'block';
+        }
+        
+        function testOAuth() {
+            const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes.join(' '))}&show_dialog=true`;
+            window.location.href = authUrl;
+        }
+        
+        // Check if we have a token in the URL (after OAuth redirect)
+        function checkForToken() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const token = params.get('access_token');
+            const error = params.get('error');
+            
+            if (error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'debug-info error';
+                errorDiv.innerHTML = `
+                    <h3>❌ OAuth Error:</h3>
+                    <p><strong>Error:</strong> ${error}</p>
+                    <p><strong>Error Description:</strong> ${params.get('error_description') || 'No description provided'}</p>
+                    <p><strong>State:</strong> ${params.get('state') || 'No state'}</p>
+                `;
+                document.body.appendChild(errorDiv);
+            } else if (token) {
+                const successDiv = document.createElement('div');
+                successDiv.className = 'debug-info success';
+                successDiv.innerHTML = `
+                    <h3>✅ OAuth Success!</h3>
+                    <p><strong>Token received:</strong> ${token.substring(0, 20)}...</p>
+                    <p><strong>Token Type:</strong> ${params.get('token_type')}</p>
+                    <p><strong>Expires In:</strong> ${params.get('expires_in')} seconds</p>
+                `;
+                document.body.appendChild(successDiv);
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', checkForToken);
+    </script>
+</body>
+</html> 

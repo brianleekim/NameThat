@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NameThat - Simple Audio Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .login-btn {
+            background: #1DB954;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .login-btn:hover {
+            background: #1ed760;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(29, 185, 84, 0.4);
+        }
+        
+        .playlist-section {
+            margin: 20px 0;
+        }
+        
+        .playlist-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .playlist-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .track-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .track-info {
+            flex: 1;
+        }
+        
+        .track-artwork {
+            width: 60px;
+            height: 60px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+        
+        .play-btn {
+            background: #1DB954;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .play-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin: 20px 0;
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ffcccc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ff0000;
+        }
+        
+        .success {
+            background: rgba(0, 255, 0, 0.2);
+            color: #ccffcc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 NameThat - Simple Audio Demo</h1>
+        
+        <div class="status" id="status">
+            <h3>Status</h3>
+            <p id="statusText">Ready to connect to your Django backend</p>
+        </div>
+        
+        <button class="login-btn" id="loginBtn" onclick="login()">
+            Connect to Spotify (via Django)
+        </button>
+        
+        <div id="playlistsSection" style="display: none;">
+            <h2>Your Playlists</h2>
+            <div id="playlistsList"></div>
+        </div>
+        
+        <div id="tracksSection" style="display: none;">
+            <h2>Tracks with Preview URLs</h2>
+            <div id="tracksList"></div>
+        </div>
+        
+        <audio id="audioPlayer" class="audio-player" controls style="display: none;">
+            Your browser does not support the audio element.
+        </audio>
+        
+        <div id="errorSection" style="display: none;" class="error">
+            <h3>⚠️ Note</h3>
+            <p>This demo uses 30-second preview URLs from Spotify's API.</p>
+            <p>Not all tracks have preview URLs available.</p>
+        </div>
+    </div>
+
+    <script>
+        const DJANGO_BASE_URL = 'http://127.0.0.1:8000';
+        let currentPlaylistId = null;
+        
+        function updateStatus(message, isError = false) {
+            const statusText = document.getElementById('statusText');
+            const status = document.getElementById('status');
+            
+            statusText.textContent = message;
+            
+            if (isError) {
+                status.style.background = 'rgba(255, 0, 0, 0.2)';
+            } else {
+                status.style.background = 'rgba(255, 255, 255, 0.2)';
+            }
+        }
+        
+        function login() {
+            updateStatus('Redirecting to Django backend...');
+            // Add state parameter to indicate we want to redirect back to demo
+            window.location.href = `${DJANGO_BASE_URL}/api/login/?state=demo`;
+        }
+        
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch(`${DJANGO_BASE_URL}/api/playlists/`, {
+                    credentials: 'include' // Include cookies for session
+                });
+                
+                if (response.status === 401) {
+                    updateStatus('Not authenticated. Please connect to Spotify.');
+                    document.getElementById('loginBtn').style.display = 'block';
+                    document.getElementById('playlistsSection').style.display = 'none';
+                    return false;
+                } else if (response.status === 200) {
+                    updateStatus('Connected! Loading your playlists...');
+                    document.getElementById('loginBtn').style.display = 'none';
+                    document.getElementById('playlistsSection').style.display = 'block';
+                    await loadPlaylists();
+                    return true;
+                } else {
+                    updateStatus(`Unexpected response: ${response.status}`, true);
+                    return false;
+                }
+            } catch (error) {
+                updateStatus('Error connecting to Django backend: ' + error.message, true);
+                return false;
+            }
+        }
+        
+        async function loadPlaylists() {
+            try {
+                const response = await fetch(`${DJANGO_BASE_URL}/api/playlists/`, {
+                    credentials: 'include'
+                });
+                const playlists = await response.json();
+                
+                const playlistsList = document.getElementById('playlistsList');
+                playlistsList.innerHTML = '';
+                
+                playlists.forEach(playlist => {
+                    const playlistDiv = document.createElement('div');
+                    playlistDiv.className = 'playlist-item';
+                    playlistDiv.innerHTML = `
+                        <h3>${playlist.name}</h3>
+                        <p>ID: ${playlist.id}</p>
+                    `;
+                    playlistDiv.onclick = () => loadTracks(playlist.id, playlist.name);
+                    playlistsList.appendChild(playlistDiv);
+                });
+                
+                updateStatus(`Found ${playlists.length} playlists. Click one to see tracks.`);
+                
+            } catch (error) {
+                updateStatus('Error loading playlists: ' + error.message, true);
+            }
+        }
+        
+        async function loadTracks(playlistId, playlistName) {
+            try {
+                updateStatus(`Loading tracks from "${playlistName}"...`);
+                currentPlaylistId = playlistId;
+                
+                const response = await fetch(`${DJANGO_BASE_URL}/api/playlist/${playlistId}/tracks/`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                const tracksList = document.getElementById('tracksList');
+                tracksList.innerHTML = '';
+                
+                const tracksWithPreview = data.tracks.filter(track => track.has_preview);
+                
+                if (tracksWithPreview.length === 0) {
+                    tracksList.innerHTML = `
+                        <div class="error">
+                            <h3>No tracks with preview URLs found</h3>
+                            <p>This playlist has ${data.tracks.length} tracks, but none have 30-second preview URLs available.</p>
+                            <p>This is a limitation of Spotify's API - not all tracks have preview URLs.</p>
+                        </div>
+                    `;
+                } else {
+                    tracksWithPreview.forEach(track => {
+                        const trackDiv = document.createElement('div');
+                        trackDiv.className = 'track-item';
+                        trackDiv.innerHTML = `
+                            <img src="${track.album_image || 'https://via.placeholder.com/60x60'}" 
+                                 alt="Album Art" class="track-artwork">
+                            <div class="track-info">
+                                <h4>${track.name}</h4>
+                                <p>${track.artists}</p>
+                                <p><small>${track.album}</small></p>
+                            </div>
+                            <button class="play-btn" onclick="playTrack('${track.preview_url}', '${track.name}')">
+                                ▶️ Play Preview
+                            </button>
+                        `;
+                        tracksList.appendChild(trackDiv);
+                    });
+                    
+                    updateStatus(`Found ${tracksWithPreview.length} tracks with preview URLs out of ${data.tracks.length} total tracks.`);
+                }
+                
+                document.getElementById('tracksSection').style.display = 'block';
+                
+            } catch (error) {
+                updateStatus('Error loading tracks: ' + error.message, true);
+            }
+        }
+        
+        function playTrack(previewUrl, trackName) {
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = previewUrl;
+            audioPlayer.style.display = 'block';
+            audioPlayer.play();
+            
+            updateStatus(`Playing: ${trackName}`);
+        }
+        
+        // Check if we're coming back from Django OAuth
+        function checkForOAuthReturn() {
+            // Check current auth status first
+            checkAuthStatus();
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', checkForOAuthReturn);
+    </script>
+</body>
+</html> 

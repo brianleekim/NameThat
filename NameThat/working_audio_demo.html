@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NameThat - Working Audio Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .track-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .album-art {
+            width: 200px;
+            height: 200px;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+            display: block;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .control-btn {
+            background: #1DB954;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+        
+        .control-btn:hover {
+            background: #1ed760;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(29, 185, 84, 0.4);
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #1DB954;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+        
+        .time-display {
+            text-align: center;
+            font-size: 1em;
+            margin: 10px 0;
+        }
+        
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .success {
+            background: rgba(0, 255, 0, 0.2);
+            color: #ccffcc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #00ff00;
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ffcccc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 NameThat - Audio Test</h1>
+        
+        <div class="status" id="status">
+            <h3>Testing Audio Playback</h3>
+            <p>This demo tests if audio playback works in your environment</p>
+        </div>
+        
+        <div class="track-info">
+            <img class="album-art" src="https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36" alt="Album Art">
+            <h3>Test Track</h3>
+            <p>This is a test to verify audio playback functionality</p>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="playBtn" onclick="playAudio()">
+                ▶️ Play Test Audio
+            </button>
+            <button class="control-btn" id="stopBtn" onclick="stopAudio()" disabled>
+                ⏹️ Stop
+            </button>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="time-display" id="timeDisplay">
+            0:00 / 0:00
+        </div>
+        
+        <div id="resultSection" style="display: none;">
+            <h3>Test Results</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let audio;
+        let isPlaying = false;
+        let progressInterval;
+        
+        function playAudio() {
+            const playBtn = document.getElementById('playBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const status = document.getElementById('status');
+            
+            // Create audio element with a test URL
+            audio = new Audio('https://p.scdn.co/mp3-preview/0c6b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b');
+            
+            // Alternative test URL (this is a placeholder - we'll use a real one)
+            audio = new Audio('https://p.scdn.co/mp3-preview/5c8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b');
+            
+            // Try a different approach - use a simple test tone
+            audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            
+            audio.addEventListener('loadstart', () => {
+                status.innerHTML = '<h3>Loading Audio...</h3><p>Attempting to load test audio</p>';
+            });
+            
+            audio.addEventListener('canplay', () => {
+                status.innerHTML = '<h3>✅ Audio Ready!</h3><p>Audio loaded successfully</p>';
+                playBtn.disabled = true;
+                stopBtn.disabled = false;
+                isPlaying = true;
+                
+                // Start progress tracking
+                progressInterval = setInterval(updateProgress, 100);
+                
+                showResult('success', 'Audio playback is working! Your environment supports audio playback.');
+            });
+            
+            audio.addEventListener('error', (e) => {
+                console.error('Audio error:', e);
+                status.innerHTML = '<h3>❌ Audio Error</h3><p>Could not load test audio</p>';
+                showResult('error', 'Audio playback failed. This might be due to browser restrictions or network issues.');
+            });
+            
+            audio.addEventListener('ended', () => {
+                stopAudio();
+                showResult('success', 'Audio playback completed successfully!');
+            });
+            
+            // Try to play
+            audio.play().catch(error => {
+                console.error('Playback error:', error);
+                status.innerHTML = '<h3>❌ Playback Error</h3><p>Could not start audio playback</p>';
+                showResult('error', 'Audio playback failed to start. This might be due to browser autoplay restrictions.');
+            });
+        }
+        
+        function stopAudio() {
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+            
+            const playBtn = document.getElementById('playBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            playBtn.disabled = false;
+            stopBtn.disabled = true;
+            isPlaying = false;
+            
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            if (!audio) return;
+            
+            const progressFill = document.getElementById('progressFill');
+            const timeDisplay = document.getElementById('timeDisplay');
+            
+            if (audio.duration && !isNaN(audio.duration)) {
+                const progress = (audio.currentTime / audio.duration) * 100;
+                progressFill.style.width = progress + '%';
+                
+                const currentTime = formatTime(audio.currentTime);
+                const totalTime = formatTime(audio.duration);
+                timeDisplay.textContent = `${currentTime} / ${totalTime}`;
+            } else {
+                progressFill.style.width = '0%';
+                timeDisplay.textContent = '0:00 / 0:00';
+            }
+        }
+        
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+        
+        function showResult(type, message) {
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultSection.style.display = 'block';
+            
+            if (type === 'success') {
+                resultContent.innerHTML = `<div class="success"><h4>✅ Success!</h4><p>${message}</p></div>`;
+            } else {
+                resultContent.innerHTML = `<div class="error"><h4>❌ Error</h4><p>${message}</p></div>`;
+            }
+        }
+        
+        // Test if audio context is supported
+        window.addEventListener('load', () => {
+            const status = document.getElementById('status');
+            
+            if (typeof Audio !== 'undefined') {
+                status.innerHTML = '<h3>✅ Audio Support Available</h3><p>Your browser supports audio playback</p>';
+            } else {
+                status.innerHTML = '<h3>❌ No Audio Support</h3><p>Your browser does not support audio playback</p>';
+            }
+        });
+    </script>
+</body>
+</html> 
